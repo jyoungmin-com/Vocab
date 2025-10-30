@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: VocabList
+  config:
+    import: optional:application-dev.properties
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SQL_URL}
+    username: ${SQL_USERNAME}
+    password: ${SQL_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+  data:
+    redis:
+      host: ${REDIS_URL}
+      port: ${REDIS_PORT}
+
+server:
+  port: 8081
+  frontend:
+    url: ${FRONTEND_URL}
+  auth:
+    url: ${AUTH_URL}

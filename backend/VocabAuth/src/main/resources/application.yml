@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: VocabAuth
+  config:
+    import: optional:application-dev.properties
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SQL_URL}
+    username: ${SQL_USERNAME}
+    password: ${SQL_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+  data:
+    redis:
+      host: ${REDIS_URL}
+      port: ${REDIS_PORT}
+
+server:
+  port: 8080
+  frontend:
+    url: http://localhost:3000
+
+
+jwt:
+  secret: ${JWT_SECRET}
+  accessToken:
+    ExpirationTime: ${JWT_ACCESS_EXPIRE}
+  refreshToken:
+    ExpirationTime: ${JWT_REFRESH_EXPIRE}

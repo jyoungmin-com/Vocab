@@ -1,0 +1,5 @@
+rootProject.name = 'Vocab'
+
+// Backend microservices
+include 'backend:VocabAuth'
+include 'backend:VocabList'

@@ -24,3 +24,13 @@ subprojects {
         }
     }
 }
+
+// backend 폴더는 실제 애플리케이션이 아니므로 bootJar 비활성화
+project(':backend') {
+    bootJar {
+        enabled = false
+    }
+    jar {
+        enabled = true
+    }
+}

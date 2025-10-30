@@ -1,5 +1,8 @@
 rootProject.name = 'Vocab'
 
+// Backend 폴더를 명시적으로 include
+include 'backend'
+
 // Backend microservices
 include 'backend:VocabAuth'
 include 'backend:VocabList'

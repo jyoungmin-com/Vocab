@@ -26,3 +26,20 @@ server:
     url: ${FRONTEND_URL}
   auth:
     url: ${AUTH_URL}
+
+# Rate Limiting Configuration
+resilience4j:
+  ratelimiter:
+    instances:
+      word-create:
+        limit-for-period: 10
+        limit-refresh-period: 60s
+        timeout-duration: 0s
+      word-general:
+        limit-for-period: 30
+        limit-refresh-period: 60s
+        timeout-duration: 0s
+      list-general:
+        limit-for-period: 20
+        limit-refresh-period: 60s
+        timeout-duration: 0s

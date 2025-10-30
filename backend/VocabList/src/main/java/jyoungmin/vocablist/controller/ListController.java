@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/list")
+@RequestMapping("/api/v1/list")
 public class ListController {
     private final AuthUser authUser;
     private final ListService listService;
@@ -30,10 +30,5 @@ public class ListController {
         UserInfo userInfo = authUser.getUserInfo();
 
         return ResponseEntity.ok(listService.createList(userInfo.getId(), listRequest.getListName()));
-    }
-
-    @GetMapping("/test")
-    public void test(@RequestParam long userId, @RequestParam long listId) {
-        System.out.println(authUser.verifyListOwner(userId, listId));
     }
 }

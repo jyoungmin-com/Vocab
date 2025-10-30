@@ -1,10 +1,11 @@
 package jyoungmin.vocablist.service;
 
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import jyoungmin.vocablist.dto.UserInfo;
 import jyoungmin.vocablist.dto.WordRequest;
 import jyoungmin.vocablist.dto.WordResponse;
 import jyoungmin.vocablist.entity.Word;
-import jyoungmin.vocablist.exception.ErrorCode;
+import jyoungmin.vocabcommons.exception.ErrorCode;
 import jyoungmin.vocablist.exception.VocabException;
 import jyoungmin.vocablist.repository.WordRepository;
 import jyoungmin.vocablist.util.AuthUser;
@@ -25,6 +26,7 @@ public class WordService {
     private final ListService listService;
     private final JapaneseValidator japaneseValidator;
 
+    @RateLimiter(name = "word-create")
     public WordResponse saveWordToDb(WordRequest wordRequest) {
         Word word = requestToWord(wordRequest);
 
@@ -35,6 +37,7 @@ public class WordService {
         }
     }
 
+    @RateLimiter(name = "word-general")
     public List<WordResponse> getWordsByListId(long listId) {
         long userId = authUser.getUserInfo().getId();
         if (!authUser.verifyListOwner(userId, listId)) {
@@ -48,6 +51,7 @@ public class WordService {
         return wordList.stream().map(s -> toResponse(false, s)).toList();
     }
 
+    @RateLimiter(name = "word-general")
     public List<WordResponse> getWordsByUserId() {
         return wordRepository.getWordsByUserId(authUser.getUserInfo().getId())
                 .stream()
@@ -69,6 +73,7 @@ public class WordService {
         return toResponse(false, words.get(0));
     }
 
+    @RateLimiter(name = "word-general")
     public boolean deleteWordById(long wordId) {
         long userId = authUser.getUserInfo().getId();
         Word word = wordRepository.getWordByidAndUserId(wordId, userId);
@@ -83,6 +88,7 @@ public class WordService {
         }
     }
 
+    @RateLimiter(name = "word-general")
     public WordResponse updateWordById(long wordId, WordRequest wordRequest) {
         long userId = authUser.getUserInfo().getId();
         Word word = wordRepository.getWordByidAndUserId(wordId, userId);

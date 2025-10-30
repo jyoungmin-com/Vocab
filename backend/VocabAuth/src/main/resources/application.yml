@@ -32,3 +32,20 @@ jwt:
     ExpirationTime: ${JWT_ACCESS_EXPIRE}
   refreshToken:
     ExpirationTime: ${JWT_REFRESH_EXPIRE}
+
+# Rate Limiting Configuration
+resilience4j:
+  ratelimiter:
+    instances:
+      auth-login:
+        limit-for-period: 5
+        limit-refresh-period: 60s
+        timeout-duration: 0s
+      auth-register:
+        limit-for-period: 3
+        limit-refresh-period: 60s
+        timeout-duration: 0s
+      auth-general:
+        limit-for-period: 20
+        limit-refresh-period: 60s
+        timeout-duration: 0s

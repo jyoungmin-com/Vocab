@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()  // Swagger UI
                 .requestMatchers("/api/**").authenticated()  // /api/** 경로는 인증 필수
                 .anyRequest().permitAll()  // 나머지는 허용
             )

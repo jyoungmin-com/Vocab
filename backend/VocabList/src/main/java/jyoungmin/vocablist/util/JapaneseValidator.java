@@ -1,6 +1,6 @@
 package jyoungmin.vocablist.util;
 
-import jyoungmin.vocablist.exception.ErrorCode;
+import jyoungmin.vocabcommons.exception.ErrorCode;
 import jyoungmin.vocablist.exception.VocabException;
 import org.springframework.stereotype.Component;
 

@@ -6,3 +6,4 @@ include 'backend'
 // Backend microservices
 include 'backend:VocabAuth'
 include 'backend:VocabList'
+include 'backend:VocabCommons'

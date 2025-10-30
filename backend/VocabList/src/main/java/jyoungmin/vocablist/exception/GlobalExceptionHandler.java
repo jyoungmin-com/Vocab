@@ -2,6 +2,8 @@ package jyoungmin.vocablist.exception;
 
 import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
+import jyoungmin.vocabcommons.exception.ErrorCode;
+import jyoungmin.vocabcommons.exception.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

@@ -1,7 +1,7 @@
 package jyoungmin.vocabauth.util;
 
 import jyoungmin.vocabauth.exception.AuthException;
-import jyoungmin.vocabauth.exception.ErrorCode;
+import jyoungmin.vocabcommons.exception.ErrorCode;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 

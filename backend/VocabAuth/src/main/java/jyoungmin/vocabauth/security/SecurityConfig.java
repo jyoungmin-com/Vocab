@@ -70,10 +70,15 @@ public class SecurityConfig {
 
 
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/check-username/**").permitAll() // 인증 불필요
-                        .requestMatchers("/auth/logout", "/auth/me").authenticated() // 인증 필요
-                        .requestMatchers("/api/**").authenticated() //모든 API 호출 유저 인증 필요.
-                        .anyRequest().permitAll()); // 이 외 요청은 권한 필요 X
+                        // Swagger UI and OpenAPI docs
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        // Public auth endpoints
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/duplicate/**", "/api/v1/auth/refresh").permitAll()
+                        // Protected auth endpoints
+                        .requestMatchers("/api/v1/auth/logout", "/api/v1/auth/me").authenticated()
+                        // All other API calls require authentication
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll());
 
         return httpSecurity.build();
     }

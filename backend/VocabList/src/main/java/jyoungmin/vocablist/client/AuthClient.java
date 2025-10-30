@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @FeignClient(name = "vocabauth", url = "${server.auth.url}")
 public interface AuthClient {
 
-    @GetMapping("/auth/me")
+    @GetMapping("/api/v1/auth/me")
     UserInfo getAuthenticatedUser(@RequestHeader("Authorization") String authorizationHeader);
 }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/word")
+@RequestMapping("/api/v1/word")
 public class WordController {
 
     private final WordService wordService;
@@ -56,10 +56,4 @@ public class WordController {
                                              @Valid @RequestBody WordRequest wordRequest) {
         return ResponseEntity.ok(wordService.updateWordById(wordId, wordRequest));
     }
-
-    @GetMapping("/test")
-    public void test(@RequestParam long wordId) {
-        System.out.println(wordService.deleteWordById(wordId));
-    }
-
 }

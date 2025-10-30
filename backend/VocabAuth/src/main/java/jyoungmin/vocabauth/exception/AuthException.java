@@ -1,5 +1,6 @@
 package jyoungmin.vocabauth.exception;
 
+import jyoungmin.vocabcommons.exception.ErrorCode;
 import lombok.Getter;
 
 @Getter

@@ -1,4 +1,4 @@
-package jyoungmin.vocabauth.exception;
+package jyoungmin.vocabcommons.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;

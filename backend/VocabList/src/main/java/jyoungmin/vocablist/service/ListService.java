@@ -1,5 +1,6 @@
 package jyoungmin.vocablist.service;
 
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import jyoungmin.vocablist.entity.List;
 import jyoungmin.vocablist.repository.ListRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class ListService {
      * @param userId 사용자 ID
      * @return 사용자의 모든 리스트
      */
+    @RateLimiter(name = "list-general")
     public java.util.List<List> getAllListsByUserId(Long userId) {
         return listRepository.findAllByUserId(userId);
     }
@@ -54,6 +56,7 @@ public class ListService {
      * @return 생성된 리스트
      */
     @Transactional
+    @RateLimiter(name = "list-general")
     public List createList(Long userId, String listName) {
         List newList = List.builder()
                 .listName(listName)

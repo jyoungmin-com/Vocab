@@ -1,7 +1,7 @@
 package jyoungmin.vocablist.util;
 
 import jyoungmin.vocablist.dto.UserInfo;
-import jyoungmin.vocablist.exception.ErrorCode;
+import jyoungmin.vocabcommons.exception.ErrorCode;
 import jyoungmin.vocablist.exception.VocabException;
 import jyoungmin.vocablist.repository.ListRepository;
 import jyoungmin.vocablist.repository.WordRepository;

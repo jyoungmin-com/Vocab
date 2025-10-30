@@ -1,6 +1,8 @@
 package jyoungmin.vocabauth.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jyoungmin.vocabcommons.exception.ErrorCode;
+import jyoungmin.vocabcommons.exception.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;

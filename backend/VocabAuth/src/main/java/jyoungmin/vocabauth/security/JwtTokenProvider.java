@@ -6,7 +6,7 @@ import io.jsonwebtoken.security.SecurityException;
 import jyoungmin.vocabauth.dao.RedisDao;
 import jyoungmin.vocabauth.dto.JwtToken;
 import jyoungmin.vocabauth.exception.AuthException;
-import jyoungmin.vocabauth.exception.ErrorCode;
+import jyoungmin.vocabcommons.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

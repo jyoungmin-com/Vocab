@@ -1,8 +1,10 @@
 package jyoungmin.vocabauth.security;
 
-import jakarta.servlet.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jyoungmin.vocabauth.exception.AuthException;
 import jyoungmin.vocabcommons.exception.BaseServiceException;
 import jyoungmin.vocabcommons.exception.ErrorCode;
 import jyoungmin.vocabcommons.security.JwtFilterUtils;
@@ -10,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
@@ -19,8 +23,9 @@ import java.io.IOException;
  * Processes JWT tokens from Authorization headers and sets authentication for valid requests.
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter extends GenericFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * Provider for JWT token validation and authentication extraction
      */
@@ -30,17 +35,14 @@ public class JwtAuthenticationFilter extends GenericFilter {
      * Filters incoming requests to validate JWT tokens and set authentication context.
      * Extracts JWT from Authorization header, validates it, and populates SecurityContext.
      *
-     * @param servletRequest  the incoming request
-     * @param servletResponse the outgoing response
-     * @param filterChain     the filter chain to continue processing
+     * @param request     the incoming request
+     * @param response    the outgoing response
+     * @param filterChain the filter chain to continue processing
      * @throws IOException      if an I/O error occurs
      * @throws ServletException if a servlet error occurs
      */
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest request = (HttpServletRequest) servletRequest;
-        HttpServletResponse response = (HttpServletResponse) servletResponse;
-
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             // Get JWT token from request header
             String accessToken = resolveToken(request);
@@ -59,8 +61,11 @@ public class JwtAuthenticationFilter extends GenericFilter {
                 }
             }
 
-            filterChain.doFilter(servletRequest, servletResponse);
+            filterChain.doFilter(request, response);
 
+        } catch (AuthException e) {
+            log.warn("AuthException in JWT filter: {}", e.getMessage());
+            JwtFilterUtils.sendErrorResponse(response, e.getErrorCode(), request.getRequestURI());
         } catch (BaseServiceException e) {
             log.warn("BaseServiceException in JWT filter: {}", e.getMessage());
             JwtFilterUtils.sendErrorResponse(response, e.getErrorCode(), request.getRequestURI());
@@ -82,7 +87,7 @@ public class JwtAuthenticationFilter extends GenericFilter {
      */
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
         return null;

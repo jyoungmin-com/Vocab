@@ -68,6 +68,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Add username to MDC for logging
                 JwtFilterUtils.addUserToMDC(userInfo.getUserName());
 
+            } catch (jyoungmin.vocablist.exception.VocabException e) {
+                log.warn("VocabException during token validation: {}", e.getMessage());
+                SecurityContextHolder.clearContext();
+                JwtFilterUtils.sendErrorResponse(response, e.getErrorCode(), request.getRequestURI());
+                return;
             } catch (FeignException.Unauthorized e) {
                 // 401 response from VocabAuth (token expired or invalid)
                 log.warn("Token validation failed - Unauthorized: {}", e.getMessage());
@@ -81,10 +86,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 JwtFilterUtils.sendErrorResponse(response, ErrorCode.AUTH_SERVICE_UNAVAILABLE, request.getRequestURI());
                 return;
             } catch (FeignException e) {
-                // Other Feign communication errors
-                log.error("Failed to communicate with VocabAuth service: {}", e.getMessage());
-                SecurityContextHolder.clearContext();
-                JwtFilterUtils.sendErrorResponse(response, ErrorCode.AUTH_SERVICE_ERROR, request.getRequestURI());
+                // Check if the cause is a ConnectException (e.g., connection refused)
+                if (e.getCause() instanceof java.net.ConnectException) {
+                    log.error("Failed to communicate with VocabAuth service: {}", e.getMessage());
+                    SecurityContextHolder.clearContext();
+                    JwtFilterUtils.sendErrorResponse(response, ErrorCode.AUTH_SERVICE_UNAVAILABLE, request.getRequestURI());
+                } else {
+                    // Other Feign communication errors (not connection refused)
+                    log.error("Other Feign communication error with VocabAuth service: {}", e.getMessage());
+                    SecurityContextHolder.clearContext();
+                    JwtFilterUtils.sendErrorResponse(response, ErrorCode.AUTH_SERVICE_ERROR, request.getRequestURI());
+                }
                 return;
             } catch (Exception e) {
                 // Unexpected errors

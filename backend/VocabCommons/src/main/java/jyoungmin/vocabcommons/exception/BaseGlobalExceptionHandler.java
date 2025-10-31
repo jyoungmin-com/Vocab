@@ -97,8 +97,21 @@ public abstract class BaseGlobalExceptionHandler {
             errorDetails += " (and " + (errorCount - 3) + " more validation error(s))";
         }
 
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT;
+
+        // Check if any field error indicates a missing required field
+        boolean isMissingRequiredField = e.getBindingResult().getFieldErrors().stream()
+                .anyMatch(error -> {
+                    String defaultMessage = error.getDefaultMessage();
+                    return defaultMessage != null && (defaultMessage.toLowerCase().contains("required") || defaultMessage.toLowerCase().contains("null"));
+                });
+
+        if (isMissingRequiredField) {
+            errorCode = ErrorCode.MISSING_REQUIRED_FIELD;
+        }
+
         ErrorResponse errorResponse = ErrorResponse.of(
-                ErrorCode.INVALID_INPUT,
+                errorCode,
                 errorDetails,
                 request.getRequestURI()
         );

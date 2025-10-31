@@ -1,76 +1,33 @@
 package jyoungmin.vocabauth.exception;
 
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
+import jyoungmin.vocabcommons.exception.BaseGlobalExceptionHandler;
 import jyoungmin.vocabcommons.exception.ErrorCode;
 import jyoungmin.vocabcommons.exception.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.stream.Collectors;
-
+/**
+ * Global exception handler for the authentication service.
+ * Extends base handler with authentication-specific exception handling.
+ */
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends BaseGlobalExceptionHandler {
 
     /**
-     * AuthException - Custom business logic exceptions
-     */
-    @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ErrorResponse> handleAuthException(
-            AuthException e,
-            HttpServletRequest request) {
-
-        log.warn("[AuthException] Code: {}, Message: {}, Details: {}",
-                e.getErrorCode().getCode(),
-                e.getErrorCode().getMessage(),
-                e.getDetails());
-
-        ErrorResponse errorResponse = ErrorResponse.of(
-                e.getErrorCode(),
-                e.getDetails(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity
-                .status(e.getErrorCode().getHttpStatus())
-                .body(errorResponse);
-    }
-
-    /**
-     * MethodArgumentNotValidException - @Valid validation failures
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
-            MethodArgumentNotValidException e,
-            HttpServletRequest request) {
-
-        String errorDetails = e.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-
-        log.warn("[MethodArgumentNotValidException] Validation failed: {}", errorDetails);
-
-        ErrorResponse errorResponse = ErrorResponse.of(
-                ErrorCode.INVALID_INPUT,
-                errorDetails,
-                request.getRequestURI()
-        );
-
-        return ResponseEntity
-                .status(ErrorCode.INVALID_INPUT.getHttpStatus())
-                .body(errorResponse);
-    }
-
-    /**
-     * BadCredentialsException - Invalid username/password
+     * Handles invalid login credentials.
+     * Returns a generic error message to prevent username enumeration.
+     *
+     * @param e       the bad credentials exception
+     * @param request the HTTP request
+     * @return error response with appropriate status
      */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(
@@ -91,7 +48,37 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * AuthenticationException - General authentication failures
+     * Handles user not found during authentication.
+     * Returns a generic error message to prevent username enumeration.
+     *
+     * @param e       the username not found exception
+     * @param request the HTTP request
+     * @return error response with appropriate status
+     */
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(
+            UsernameNotFoundException e,
+            HttpServletRequest request) {
+
+        log.warn("[UsernameNotFoundException] User not found: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                ErrorCode.INVALID_CREDENTIALS,
+                "Please check your username and password",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(ErrorCode.INVALID_CREDENTIALS.getHttpStatus())
+                .body(errorResponse);
+    }
+
+    /**
+     * Handles general authentication failures.
+     *
+     * @param e       the authentication exception
+     * @param request the HTTP request
+     * @return error response with appropriate status
      */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
@@ -112,91 +99,29 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * DataIntegrityViolationException - Duplicate username, etc.
+     * Handles rate limit exceeded errors.
+     * Returns 429 Too Many Requests status.
+     *
+     * @param e       the request not permitted exception
+     * @param request the HTTP request
+     * @return error response with 429 status
      */
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
-            DataIntegrityViolationException e,
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ErrorResponse> handleRequestNotPermitted(
+            RequestNotPermitted e,
             HttpServletRequest request) {
 
-        log.warn("[DataIntegrityViolationException] Data integrity violation: {}", e.getMessage());
-
-        // Check if it's a duplicate key error
-        ErrorCode errorCode = e.getMessage().contains("Duplicate")
-                ? ErrorCode.USERNAME_ALREADY_EXISTS
-                : ErrorCode.DATABASE_ERROR;
+        log.warn("[RequestNotPermitted] Rate limit exceeded: {}", e.getMessage());
 
         ErrorResponse errorResponse = ErrorResponse.of(
-                errorCode,
-                "Please try a different username",
+                ErrorCode.RATE_LIMIT_EXCEEDED,
+                "Too many requests. Please try again later.",
                 request.getRequestURI()
         );
 
         return ResponseEntity
-                .status(errorCode.getHttpStatus())
+                .status(ErrorCode.RATE_LIMIT_EXCEEDED.getHttpStatus())
                 .body(errorResponse);
     }
 
-    /**
-     * DataAccessException - Database errors
-     */
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ErrorResponse> handleDataAccessException(
-            DataAccessException e,
-            HttpServletRequest request) {
-
-        log.error("[DataAccessException] Database error: {}", e.getMessage(), e);
-
-        ErrorResponse errorResponse = ErrorResponse.of(
-                ErrorCode.DATABASE_ERROR,
-                "Database operation failed",
-                request.getRequestURI()
-        );
-
-        return ResponseEntity
-                .status(ErrorCode.DATABASE_ERROR.getHttpStatus())
-                .body(errorResponse);
-    }
-
-    /**
-     * IllegalArgumentException - Legacy validation errors
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-            IllegalArgumentException e,
-            HttpServletRequest request) {
-
-        log.warn("[IllegalArgumentException] Validation failed: {}", e.getMessage());
-
-        ErrorResponse errorResponse = ErrorResponse.of(
-                ErrorCode.INVALID_INPUT,
-                e.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity
-                .status(ErrorCode.INVALID_INPUT.getHttpStatus())
-                .body(errorResponse);
-    }
-
-    /**
-     * Exception - Generic exception handler (fallback)
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(
-            Exception e,
-            HttpServletRequest request) {
-
-        log.error("[Exception] Unexpected error occurred: {}", e.getMessage(), e);
-
-        ErrorResponse errorResponse = ErrorResponse.of(
-                ErrorCode.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred. Please try again later.",
-                request.getRequestURI()
-        );
-
-        return ResponseEntity
-                .status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
-                .body(errorResponse);
-    }
 }

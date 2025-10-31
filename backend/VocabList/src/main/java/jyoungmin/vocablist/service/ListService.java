@@ -8,26 +8,31 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service for managing vocabulary lists.
+ * Handles list creation, retrieval, and default list management for users.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ListService {
 
+    /**
+     * Repository for list data access
+     */
     private final ListRepository listRepository;
 
     /**
-     * 사용자의 기본 리스트를 가져오거나 없으면 생성
-     * 처음 로그인하는 사용자에게 자동으로 기본 단어장 생성
+     * Gets or creates a default list for the user.
+     * Automatically creates a default vocabulary list for first-time users.
      *
-     * @param userId 사용자 ID
-     * @return 사용자의 첫 번째 리스트 (또는 새로 생성된 리스트)
+     * @param userId the user's ID
+     * @return the user's first list or newly created default list
      */
     @Transactional
     public List getOrCreateDefaultList(Long userId) {
-        // 사용자의 첫 번째 리스트 조회
         return listRepository.findFirstByUserIdOrderByCreatedAtAsc(userId)
                 .orElseGet(() -> {
-                    // 리스트가 없으면 기본 리스트 생성
                     log.info("Creating default list for user: {}", userId);
                     List defaultList = List.builder()
                             .listName("Default")
@@ -38,10 +43,10 @@ public class ListService {
     }
 
     /**
-     * 사용자의 모든 리스트 조회
+     * Retrieves all lists belonging to a user.
      *
-     * @param userId 사용자 ID
-     * @return 사용자의 모든 리스트
+     * @param userId the user's ID
+     * @return list of all user's vocabulary lists
      */
     @RateLimiter(name = "list-general")
     public java.util.List<List> getAllListsByUserId(Long userId) {
@@ -49,11 +54,11 @@ public class ListService {
     }
 
     /**
-     * 새로운 리스트 생성
+     * Creates a new vocabulary list for the user.
      *
-     * @param userId   사용자 ID
-     * @param listName 리스트 이름
-     * @return 생성된 리스트
+     * @param userId   the user's ID
+     * @param listName the name for the new list
+     * @return the created list
      */
     @Transactional
     @RateLimiter(name = "list-general")
@@ -62,6 +67,8 @@ public class ListService {
                 .listName(listName)
                 .userId(userId)
                 .build();
-        return listRepository.save(newList);
+        List savedList = listRepository.save(newList);
+        log.info("List created: id={}, listName='{}', userId={}", savedList.getId(), savedList.getListName(), userId);
+        return savedList;
     }
 }

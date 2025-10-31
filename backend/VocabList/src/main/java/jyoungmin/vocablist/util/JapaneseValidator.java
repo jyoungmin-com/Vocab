@@ -4,14 +4,18 @@ import jyoungmin.vocabcommons.exception.ErrorCode;
 import jyoungmin.vocablist.exception.VocabException;
 import org.springframework.stereotype.Component;
 
+/**
+ * Validator for Japanese text and furigana formatting.
+ * Checks for presence of Japanese characters and validates furigana requirements.
+ */
 @Component
 public class JapaneseValidator {
 
     /**
-     * 문자열에 일본어 문자(히라가나, 가타카나, 한자)가 포함되어 있는지 확인
+     * Checks if a string contains Japanese characters (hiragana, katakana, or kanji).
      *
-     * @param text 확인할 문자열
-     * @return 일본어 문자가 포함되어 있으면 true
+     * @param text the string to check
+     * @return true if the text contains Japanese characters
      */
     public boolean containsJapanese(String text) {
         if (text == null || text.isEmpty()) {
@@ -19,12 +23,12 @@ public class JapaneseValidator {
         }
 
         for (char c : text.toCharArray()) {
-            // ひらがな: U+3040 ~ U+309F
-            // カタカナ: U+30A0 ~ U+30FF
-            // 漢字: U+4E00 ~ U+9FAF
-            if ((c >= '\u3040' && c <= '\u309F') ||  // 히라가나
-                (c >= '\u30A0' && c <= '\u30FF') ||  // 가타카나
-                (c >= '\u4E00' && c <= '\u9FAF')) {  // 한자
+            // Hiragana: U+3040 ~ U+309F
+            // Katakana: U+30A0 ~ U+30FF
+            // Kanji: U+4E00 ~ U+9FAF
+            if ((c >= '\u3040' && c <= '\u309F') ||  // Hiragana
+                    (c >= '\u30A0' && c <= '\u30FF') ||  // Katakana
+                    (c >= '\u4E00' && c <= '\u9FAF')) {  // Kanji
                 return true;
             }
         }
@@ -33,11 +37,37 @@ public class JapaneseValidator {
     }
 
     /**
-     * 일본어 단어에 후리가나가 필수인지 검증.
+     * Validates that furigana consists only of hiragana or katakana characters.
      *
-     * @param word     단어
-     * @param furigana 후리가나
-     * @throws VocabException 일본어 단어인데 furigana가 없으면 예외 발생
+     * @param furigana the furigana string to validate
+     * @return true if the furigana format is valid
+     */
+    public boolean isValidFurigana(String furigana) {
+        if (furigana == null || furigana.isEmpty()) {
+            return false;
+        }
+
+        for (char c : furigana.toCharArray()) {
+            // Allow only whitespace, hiragana, and katakana
+            // Hiragana: U+3040 ~ U+309F
+            // Katakana: U+30A0 ~ U+30FF (includes middle dot ・ at U+30FB)
+            if (!Character.isWhitespace(c) &&
+                    !(c >= '\u3040' && c <= '\u309F') &&  // Hiragana
+                    !(c >= '\u30A0' && c <= '\u30FF')) {  // Katakana (includes middle dot)
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates that Japanese words have required furigana and checks format.
+     * Throws an exception if a Japanese word lacks furigana or has invalid format.
+     *
+     * @param word     the word to validate
+     * @param furigana the furigana reading
+     * @throws VocabException if Japanese word lacks furigana or format is invalid
      */
     public void validateFurigana(String word, String furigana) {
         if (containsJapanese(word)) {
@@ -45,6 +75,14 @@ public class JapaneseValidator {
                 throw new VocabException(
                         ErrorCode.FURIGANA_REQUIRED,
                         "Word '" + word + "' contains Japanese characters and requires furigana"
+                );
+            }
+
+            // 후리가나 형식 검증 추가
+            if (!isValidFurigana(furigana)) {
+                throw new VocabException(
+                        ErrorCode.INVALID_INPUT,
+                        "Furigana '" + furigana + "' must contain only hiragana or katakana characters"
                 );
             }
         }

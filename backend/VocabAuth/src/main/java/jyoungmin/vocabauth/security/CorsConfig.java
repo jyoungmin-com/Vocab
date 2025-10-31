@@ -7,26 +7,40 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+/**
+ * CORS (Cross-Origin Resource Sharing) configuration for the authentication service.
+ * Allows the frontend application to make cross-origin requests with credentials.
+ */
 @Configuration
 public class CorsConfig {
 
+    /**
+     * Frontend application URL allowed to access this API
+     */
     @Value("${server.frontend.url}")
     private String frontendUrl;
 
+    /**
+     * Configures CORS filter with credentials support and frontend origin access.
+     * Allows all headers and methods from the configured frontend URL.
+     *
+     * @return configured CORS filter
+     */
     @Bean
     public CorsFilter corsFilter() {
-        // CORS 설정을 URL 패턴별로 적용할 수 있게 해주는 클래스
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
         CorsConfiguration configuration = new CorsConfiguration();
 
+        // Allow credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin(frontendUrl);
 
+        // Allow all headers and HTTP methods
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
 
-        // preflight 요청의 캐시 시간을 1시간으로 설정
+        // Cache preflight requests for 1 hour
         configuration.setMaxAge(3600L);
 
         source.registerCorsConfiguration("/**", configuration);

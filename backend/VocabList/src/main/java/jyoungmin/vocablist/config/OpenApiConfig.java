@@ -1,36 +1,30 @@
 package jyoungmin.vocablist.config;
 
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
+import jyoungmin.vocabcommons.config.OpenApiConfigBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
+/**
+ * OpenAPI/Swagger configuration for the vocabulary list service.
+ * Provides interactive API documentation
+ */
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Configures OpenAPI documentation for the vocabulary list API.
+     *
+     * @return configured OpenAPI specification
+     */
     @Bean
     public OpenAPI vocabListOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("Vocab List API")
-                        .description("Vocabulary and List Management API for Vocab Application")
-                        .version("v1.0.0"))
-                .servers(List.of(
-                        new Server().url("http://localhost:8081").description("Local Development Server")
-                ))
-                .components(new Components()
-                        .addSecuritySchemes("Bearer Authentication",
-                                new SecurityScheme()
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")
-                                        .description("Enter JWT token from Auth Service")))
-                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"));
+        return OpenApiConfigBuilder.build(
+                "Vocab List API",
+                "Vocabulary and List Management API for Vocab Application",
+                "http://localhost:8081",
+                "v1.0.0",
+                "Enter JWT token from Auth Service"
+        );
     }
 }

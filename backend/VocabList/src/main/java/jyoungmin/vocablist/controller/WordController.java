@@ -1,59 +1,89 @@
 package jyoungmin.vocablist.controller;
 
 import jakarta.validation.Valid;
-import jyoungmin.vocablist.dto.UserInfo;
+import jyoungmin.vocabcommons.response.ApiResponse;
 import jyoungmin.vocablist.dto.WordRequest;
-import jyoungmin.vocablist.entity.List;
-import jyoungmin.vocablist.entity.Word;
-import jyoungmin.vocablist.service.ListService;
+import jyoungmin.vocablist.dto.WordResponse;
 import jyoungmin.vocablist.service.WordService;
-import jyoungmin.vocablist.util.AuthUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for vocabulary word operations.
+ * Handles CRUD operations for words including Japanese text validation.
+ */
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/word")
 public class WordController {
 
+    /**
+     * Service for word operations
+     */
     private final WordService wordService;
-    private final ListService listService;
-    private final AuthUser authUser;
 
     /**
-     * 단어를 저장합니다.
-     * listId를 지정하면 해당 리스트에 저장하고, 지정하지 않으면 기본 리스트에 저장합니다.
-     * 사용자의 리스트가 없으면 자동으로 "Default" 리스트를 생성합니다.
+     * Saves a new word to the database.
+     * If listId is specified, saves to that list; otherwise uses default list.
+     * Automatically creates a "Default" list if user has no lists.
      *
-     * @param wordRequest 저장할 단어 정보 (word, meaning, listId-선택)
-     * @return 저장 결과
+     * @param wordRequest the word data (word, meaning, listId-optional)
+     * @return response containing save result
      */
     @PostMapping("/save")
-    public ResponseEntity saveWord(@Valid @RequestBody WordRequest wordRequest) {
-        return ResponseEntity.ok(wordService.saveWordToDb(wordRequest));
+    public ResponseEntity<ApiResponse<WordResponse>> saveWord(@Valid @RequestBody WordRequest wordRequest) {
+        WordResponse savedWord = wordService.saveWordToDb(wordRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED, ApiResponse.Messages.WORD_CREATED, savedWord));
     }
 
-
+    /**
+     * Retrieves all words in a specific list.
+     *
+     * @param listId the list ID to retrieve words from
+     * @return response containing words in the list
+     */
     @GetMapping(params = "listId")
-    public ResponseEntity getWordsByListId(@RequestParam long listId) {
-        return ResponseEntity.ok(wordService.getWordsByListId(listId));
+    public ResponseEntity<ApiResponse<java.util.List<WordResponse>>> getWordsByListId(@RequestParam long listId) {
+        java.util.List<WordResponse> words = wordService.getWordsByListId(listId);
+        return ResponseEntity.ok(ApiResponse.success(ApiResponse.Messages.WORDS_RETRIEVED, words));
     }
 
+    /**
+     * Retrieves all words belonging to the authenticated user.
+     *
+     * @return response containing all user's words
+     */
     @GetMapping
-    public ResponseEntity getWordsByUserId() {
-        return ResponseEntity.ok(wordService.getWordsByUserId());
+    public ResponseEntity<ApiResponse<java.util.List<WordResponse>>> getWordsByUserId() {
+        java.util.List<WordResponse> words = wordService.getWordsByUserId();
+        return ResponseEntity.ok(ApiResponse.success(ApiResponse.Messages.WORDS_RETRIEVED, words));
     }
 
+    /**
+     * Deletes a word by ID.
+     *
+     * @param wordId the word ID to delete
+     * @return response indicating deletion success
+     */
     @DeleteMapping
-    public ResponseEntity deleteWordByWordId(@RequestParam long wordId) {
+    public ResponseEntity<ApiResponse<Void>> deleteWordByWordId(@RequestParam long wordId) {
         wordService.deleteWordById(wordId);
-        return ResponseEntity.ok("Deleted");
+        return ResponseEntity.ok(ApiResponse.success(ApiResponse.Messages.WORD_DELETED));
     }
 
+    /**
+     * Updates an existing word.
+     *
+     * @param wordId      the word ID to update
+     * @param wordRequest the new word data
+     * @return response containing the updated word
+     */
     @PatchMapping
-    public ResponseEntity updateWordByWordId(@RequestParam long wordId,
-                                             @Valid @RequestBody WordRequest wordRequest) {
-        return ResponseEntity.ok(wordService.updateWordById(wordId, wordRequest));
+    public ResponseEntity<ApiResponse<WordResponse>> updateWordByWordId(@RequestParam long wordId,
+                                                                        @Valid @RequestBody WordRequest wordRequest) {
+        WordResponse updatedWord = wordService.updateWordById(wordId, wordRequest);
+        return ResponseEntity.ok(ApiResponse.success(ApiResponse.Messages.WORD_UPDATED, updatedWord));
     }
 }

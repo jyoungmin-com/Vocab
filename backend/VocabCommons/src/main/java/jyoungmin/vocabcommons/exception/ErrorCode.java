@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
+/**
+ * Defines standardized error codes used throughout the application.
+ * Each error code contains an HTTP status, a unique code identifier, and a user-facing message.
+ */
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
@@ -14,10 +18,14 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_4012", "Invalid token"),
     REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "AUTH_4013", "Refresh token not found"),
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_4014", "Invalid or expired refresh token"),
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH_4015", "Authentication is required to access this resource"),
 
     // ========== Authorization Errors (4030-4039) ==========
     UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "AUTH_4030", "You do not have permission to access this resource"),
     ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "AUTH_4031", "Account is disabled"),
+
+    // ========== Rate Limiting Errors (4290-4299) ==========
+    RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "RATE_4290", "Rate limit exceeded. Please try again later"),
 
     // ========== Resource Not Found Errors (4040-4049) ==========
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_4040", "User not found"),
@@ -47,7 +55,18 @@ public enum ErrorCode {
     DATABASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SYS_5001", "Database operation failed"),
     REDIS_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SYS_5002", "Redis operation failed");
 
+    /**
+     * HTTP status code to be returned
+     */
     private final HttpStatus httpStatus;
+
+    /**
+     * Unique identifier for this error
+     */
     private final String code;
+
+    /**
+     * Human-readable error message
+     */
     private final String message;
 }

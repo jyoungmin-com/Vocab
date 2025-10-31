@@ -5,8 +5,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jyoungmin.vocabcommons.dto.UserInfo;
+import jyoungmin.vocabcommons.exception.ErrorCode;
+import jyoungmin.vocabcommons.security.JwtFilterUtils;
 import jyoungmin.vocablist.client.AuthClient;
-import jyoungmin.vocablist.dto.UserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,13 +21,30 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+/**
+ * JWT authentication filter for the vocabulary list service.
+ * Validates tokens by calling the authentication service and establishes security context.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    /**
+     * Feign client for communicating with the authentication service
+     */
     private final AuthClient authClient;
 
+    /**
+     * Filters incoming requests to validate JWT tokens via the auth service.
+     * Extracts user information and populates SecurityContext on successful validation.
+     *
+     * @param request     the HTTP request
+     * @param response    the HTTP response
+     * @param filterChain the filter chain to continue processing
+     * @throws ServletException if a servlet error occurs
+     * @throws IOException      if an I/O error occurs
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -35,29 +54,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             try {
-                // VocabAuth 서비스에 토큰 검증 요청
+                // Request token validation from VocabAuth service
                 UserInfo userInfo = authClient.getAuthenticatedUser(authorizationHeader);
 
-                // 인증 성공 시 SecurityContext에 저장
+                // Store authentication in SecurityContext on success
                 Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    userInfo,
-                    null,
-                    Collections.singletonList(new SimpleGrantedAuthority(userInfo.getRole()))
+                        userInfo,
+                        null,
+                        Collections.singletonList(new SimpleGrantedAuthority(userInfo.getRole()))
                 );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
+                // Add username to MDC for logging
+                JwtFilterUtils.addUserToMDC(userInfo.getUserName());
+
             } catch (FeignException.Unauthorized e) {
-                // VocabAuth에서 401 응답 (토큰 만료 또는 유효하지 않음)
+                // 401 response from VocabAuth (token expired or invalid)
                 log.warn("Token validation failed - Unauthorized: {}", e.getMessage());
                 SecurityContextHolder.clearContext();
+                JwtFilterUtils.sendErrorResponse(response, ErrorCode.INVALID_TOKEN, request.getRequestURI());
+                return;
+            } catch (FeignException.ServiceUnavailable | FeignException.InternalServerError e) {
+                // VocabAuth service down or internal error
+                log.error("VocabAuth service unavailable: {}", e.getMessage());
+                SecurityContextHolder.clearContext();
+                JwtFilterUtils.sendErrorResponse(response, ErrorCode.AUTH_SERVICE_UNAVAILABLE, request.getRequestURI());
+                return;
             } catch (FeignException e) {
-                // 기타 Feign 에러 (VocabAuth 서비스 장애 등)
+                // Other Feign communication errors
                 log.error("Failed to communicate with VocabAuth service: {}", e.getMessage());
                 SecurityContextHolder.clearContext();
+                JwtFilterUtils.sendErrorResponse(response, ErrorCode.AUTH_SERVICE_ERROR, request.getRequestURI());
+                return;
             } catch (Exception e) {
-                // 예상치 못한 에러
-                log.error("Unexpected error during token validation: {}", e.getMessage());
+                // Unexpected errors
+                log.error("Unexpected error during token validation: {}", e.getMessage(), e);
                 SecurityContextHolder.clearContext();
+                JwtFilterUtils.sendErrorResponse(response, ErrorCode.INTERNAL_SERVER_ERROR, request.getRequestURI());
+                return;
             }
         }
 

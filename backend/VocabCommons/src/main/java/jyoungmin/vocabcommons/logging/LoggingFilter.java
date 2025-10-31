@@ -7,12 +7,12 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jyoungmin.vocabcommons.constants.LoggingConstants;
+import jyoungmin.vocabcommons.logging.CachedBodyHttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
@@ -78,21 +78,21 @@ public class LoggingFilter implements Filter {
         // Add correlation ID to response header
         httpResponse.setHeader(LoggingConstants.CORRELATION_ID_HEADER, correlationId);
 
-        // Wrap request and response for logging
-        ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(httpRequest);
+        // Use custom CachedBodyHttpServletRequest to ensure body is readable multiple times
+        CachedBodyHttpServletRequest cachedBodyRequest = new CachedBodyHttpServletRequest(httpRequest);
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(httpResponse);
 
         long startTime = System.currentTimeMillis();
 
         try {
             // Log incoming request
-            logRequest(wrappedRequest, correlationId);
+            logRequest(cachedBodyRequest, correlationId);
 
-            // Continue filter chain
-            chain.doFilter(wrappedRequest, wrappedResponse);
+            // Continue filter chain with the cached body request
+            chain.doFilter(cachedBodyRequest, wrappedResponse);
 
             // Log outgoing response
-            logResponse(wrappedRequest, wrappedResponse, startTime, correlationId);
+            logResponse(cachedBodyRequest, wrappedResponse, startTime, correlationId);
 
         } finally {
             // Copy body to response
@@ -109,7 +109,7 @@ public class LoggingFilter implements Filter {
      * @param request       the wrapped request
      * @param correlationId the correlation ID for this request
      */
-    private void logRequest(ContentCachingRequestWrapper request, String correlationId) {
+    private void logRequest(CachedBodyHttpServletRequest request, String correlationId) {
         String method = request.getMethod();
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
@@ -138,7 +138,7 @@ public class LoggingFilter implements Filter {
      * @param startTime     the request start time in milliseconds
      * @param correlationId the correlation ID for this request
      */
-    private void logResponse(ContentCachingRequestWrapper request,
+    private void logResponse(CachedBodyHttpServletRequest request,
                              ContentCachingResponseWrapper response,
                              long startTime,
                              String correlationId) {
@@ -151,8 +151,46 @@ public class LoggingFilter implements Filter {
         String username = MDC.get(LoggingConstants.USERNAME_LOG_KEY);
         String userInfo = username != null ? " | User: " + username : "";
 
-        log.info("[RESPONSE] {} {}{} | Status: {} | Duration: {}ms | Correlation-ID: {}",
-                method, uri, userInfo, status, duration, correlationId);
+        // Get response body
+        String responseBody = getResponseBody(response);
+        String bodyInfo = responseBody != null && !responseBody.isEmpty()
+                ? " | Body: " + responseBody
+                : "";
+
+        log.info("[RESPONSE] {} {}{} | Status: {} | Duration: {}ms | Correlation-ID: {}{}",
+                method, uri, userInfo, status, duration, correlationId, bodyInfo);
+    }
+
+    /**
+     * Extracts and masks sensitive data from response body.
+     * Limits body size to MAX_BODY_LENGTH and masks sensitive fields.
+     *
+     * @param response the wrapped response
+     * @return masked response body or null if empty/error
+     */
+    private String getResponseBody(ContentCachingResponseWrapper response) {
+        try {
+            byte[] content = response.getContentAsByteArray();
+            if (content.length == 0) {
+                return null;
+            }
+
+            // Limit body size for logging
+            int length = Math.min(content.length, MAX_BODY_LENGTH);
+            String body = new String(content, 0, length, StandardCharsets.UTF_8);
+
+            // If content is truncated, add indicator
+            if (content.length > MAX_BODY_LENGTH) {
+                body += "... (truncated)";
+            }
+
+            // Try to parse as JSON and mask sensitive fields
+            return maskSensitiveData(body);
+
+        } catch (Exception e) {
+            log.warn("Failed to read response body: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -162,9 +200,9 @@ public class LoggingFilter implements Filter {
      * @param request the wrapped request
      * @return masked request body or null if empty/error
      */
-    private String getRequestBody(ContentCachingRequestWrapper request) {
+    private String getRequestBody(CachedBodyHttpServletRequest request) {
         try {
-            byte[] content = request.getContentAsByteArray();
+            byte[] content = request.getCachedBody();
             if (content.length == 0) {
                 return null;
             }

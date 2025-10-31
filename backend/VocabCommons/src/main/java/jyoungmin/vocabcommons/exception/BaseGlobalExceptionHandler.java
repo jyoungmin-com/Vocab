@@ -137,7 +137,7 @@ public abstract class BaseGlobalExceptionHandler {
 
                 // 1. Username unique constraint violation
                 if ((lowerMessage.contains("duplicate") || lowerMessage.contains("unique"))
-                        && lowerMessage.contains("username")) {
+                        && lowerMessage.contains("user")) {
                     errorCode = ErrorCode.USERNAME_ALREADY_EXISTS;
                     errorMessage = "Please try a different username";
                 }

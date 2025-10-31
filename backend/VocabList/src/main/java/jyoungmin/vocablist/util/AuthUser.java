@@ -62,11 +62,7 @@ public class AuthUser {
      * @return true if user owns the word, false otherwise
      */
     public boolean verifyWordOwner(long userId, long wordId) {
-        if (wordRepository.findByIdAndUserId(wordId, userId).isEmpty()) {
-            return false;
-        } else {
-            return true;
-        }
+        return !wordRepository.findByIdAndUserId(wordId, userId).isEmpty();
     }
 
     /**
@@ -77,11 +73,7 @@ public class AuthUser {
      * @return true if user owns the list, false otherwise
      */
     public boolean verifyListOwner(long userId, long listId) {
-        if (!listRepository.findByIdAndUserId(listId, userId).isEmpty()) {
-            return true;
-        } else {
-            return false;
-        }
+        return !listRepository.findByIdAndUserId(listId, userId).isEmpty();
     }
 
     /**

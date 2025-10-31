@@ -7,7 +7,6 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jyoungmin.vocabcommons.constants.LoggingConstants;
-import jyoungmin.vocabcommons.logging.CachedBodyHttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;

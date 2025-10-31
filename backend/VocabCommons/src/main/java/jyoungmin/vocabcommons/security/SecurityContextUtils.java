@@ -55,7 +55,7 @@ public class SecurityContextUtils {
      * Gets the current authentication principal with type safety.
      * Validates that the principal matches the expected type.
      *
-     * @param <T> expected principal type
+     * @param <T>            expected principal type
      * @param principalClass expected class of the principal
      * @return current authentication principal
      * @throws BaseServiceException if no authentication information is available or type mismatch occurs
